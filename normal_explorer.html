@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normal Explorer — BITSoM Business Statistics</title>
+<style>
+  :root{
+    --paper:#F5F7FA;--panel:#FFFFFF;--ink:#12203A;--ink-soft:#4A5A73;--hair:#DCE3EC;
+    --curve:#AEBDD2;--sel:#1B4DB1;--sel-fill:#1B4DB1;--amber:#E0A93A;
+    --good:#1B8A5A;--warn:#C4562B;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;padding:28px 22px 48px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  h1{font-size:30px;line-height:1.05;letter-spacing:-.02em;font-weight:800;margin:0;}
+  h1 .b{color:var(--sel);}
+  .scenario-pick{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:600;border:1px solid var(--hair);background:var(--panel);color:var(--ink-soft);padding:7px 12px;border-radius:999px;cursor:pointer;transition:.12s;}
+  .chip:hover{border-color:var(--sel);color:var(--sel);}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .scenario{background:var(--panel);border:1px solid var(--hair);border-left:4px solid var(--sel);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:15px;color:var(--ink);}
+  .scenario .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sel);display:block;margin-bottom:4px;}
+  .scenario b{font-weight:700;}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:18px;}
+  .card h2{font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px;font-weight:600;}
+  .ctrl{margin-bottom:18px;} .ctrl:last-child{margin-bottom:0;}
+  .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .ctrl label .sub{font-weight:400;color:var(--ink-soft);font-size:11.5px;}
+  .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--sel);}
+  input[type=range]{width:100%;accent-color:var(--sel);height:22px;margin:0;cursor:pointer;}
+  .num{font-family:var(--mono);font-size:14px;padding:5px 8px;border:1px solid var(--hair);border-radius:6px;color:var(--ink);}
+  .num:focus{outline:2px solid var(--sel);outline-offset:0;border-color:var(--sel);}
+  .qtype{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+  .qbtn{font-family:var(--mono);font-size:12.5px;padding:8px 4px;border:1px solid var(--hair);background:var(--paper);border-radius:6px;cursor:pointer;color:var(--ink-soft);font-weight:600;transition:.1s;}
+  .qbtn:hover{border-color:var(--sel);}
+  .qbtn[aria-pressed="true"]{background:var(--sel);border-color:var(--sel);color:#fff;}
+  .xrow{display:flex;gap:14px;align-items:flex-end;}
+  .xrow .field{flex:1;} .xrow .field label{font-size:12px;font-weight:600;display:block;margin-bottom:5px;} .xrow .num{width:100%;}
+  .toggle{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:13px;font-weight:600;cursor:pointer;user-select:none;}
+  .toggle input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;}
+  .readout{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .readout .expr{font-family:var(--mono);font-size:17px;color:var(--ink-soft);font-weight:600;}
+  .readout .eq{font-family:var(--mono);font-size:17px;color:var(--ink-soft);}
+  .readout .big{font-family:var(--mono);font-size:40px;font-weight:700;color:var(--sel);letter-spacing:-.01em;line-height:1;}
+  .readout .pct{font-family:var(--mono);font-size:16px;color:var(--ink-soft);}
+  .plain{font-size:14px;color:var(--ink);margin:2px 0 12px;} .plain b{color:var(--sel);}
+  .zline{font-family:var(--mono);font-size:13px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--hair);border-radius:6px;padding:8px 12px;margin-bottom:4px;}
+  .zline b{color:var(--sel);}
+  .moments{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:8px;overflow:hidden;margin-top:16px;}
+  .moments div{background:var(--panel);padding:10px 12px;}
+  .moments .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .moments .v{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:2px;}
+  @media(max-width:520px){.moments{grid-template-columns:repeat(2,1fr);}}
+  .chartcard{padding:14px 16px 8px;}
+  svg{width:100%;height:auto;display:block;overflow:visible;}
+  .axis text{font-family:var(--mono);font-size:10px;fill:var(--ink-soft);}
+  .axis line{stroke:var(--hair);}
+  footer{margin-top:26px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.6;}
+  footer code{font-family:var(--mono);background:var(--panel);border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="brand">BITSoM · Business Statistics</div>
+      <h1>The <span class="b">Normal</span> Explorer</h1>
+    </div>
+    <div class="scenario-pick" id="scenarioPick" role="group" aria-label="Business scenario">
+      <button class="chip" data-scn="delivery" aria-pressed="true">Delivery SLA</button>
+      <button class="chip" data-scn="fill">Fill weight</button>
+      <button class="chip" data-scn="plain">Plain (X)</button>
+    </div>
+  </header>
+
+  <div class="scenario" id="scenarioBox">
+    <span class="tag" id="scnTag">Delivery time</span>
+    <span id="scnText"></span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Parameters</h2>
+
+      <div class="ctrl">
+        <label for="muRange"><span id="muLabel">Mean, μ</span> <span class="val" id="muVal">35</span></label>
+        <input type="range" id="muRange" min="10" max="60" value="35" step="1">
+      </div>
+      <div class="ctrl">
+        <label for="sigRange"><span id="sigLabel">Std dev, σ</span> <span class="val" id="sigVal">8</span></label>
+        <input type="range" id="sigRange" min="1" max="20" value="8" step="0.5">
+      </div>
+
+      <div class="ctrl">
+        <label>Probability query <span class="sub">area under the curve</span></label>
+        <div class="qtype" id="qtype" role="group" aria-label="Query type">
+          <button class="qbtn" data-q="le"  aria-pressed="true">P(X ≤ x)</button>
+          <button class="qbtn" data-q="ge"  aria-pressed="false">P(X ≥ x)</button>
+          <button class="qbtn" data-q="rng" aria-pressed="false">P(a ≤ X ≤ b)</button>
+          <button class="qbtn" data-q="out" aria-pressed="false">P(outside a,b)</button>
+        </div>
+        <div class="xrow">
+          <div class="field" id="xField">
+            <label for="xNum" id="xLbl">x</label>
+            <input class="num" type="number" id="xNum" value="45" step="1">
+          </div>
+          <div class="field" id="bField" style="display:none;">
+            <label for="bNum">b (upper)</label>
+            <input class="num" type="number" id="bNum" value="45" step="1">
+          </div>
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" id="empToggle">
+        Show empirical rule (68–95–99.7)
+      </label>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="readout">
+          <span class="expr" id="exprOut">P(X ≤ 45)</span>
+          <span class="eq">=</span>
+          <span class="big" id="probOut">0.894</span>
+          <span class="pct" id="pctOut">89.4%</span>
+        </div>
+        <div class="plain" id="plainOut"></div>
+        <div class="zline" id="zOut"></div>
+        <div class="moments">
+          <div><div class="k">Mean  μ</div><div class="v" id="mMean">35</div></div>
+          <div><div class="k">Std dev  σ</div><div class="v" id="mSd">8</div></div>
+          <div><div class="k">Median</div><div class="v" id="mMed">35</div></div>
+          <div><div class="k">Variance</div><div class="v" id="mVar">64</div></div>
+        </div>
+      </div>
+      <div class="card chartcard">
+        <svg id="chart" viewBox="0 0 720 340" role="img" aria-label="Normal probability density with shaded area"></svg>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    For a continuous variable, probability is <b>area under the curve</b> — the height at a single point is not a probability.<br>
+    The z-score line rewrites your boundary in standard-deviation units: the bridge from any normal curve to the standard normal.
+  </footer>
+</div>
+
+<script>
+/* math */
+function erf(x){const t=1/(1+0.3275911*Math.abs(x));const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return x>=0?y:-y;}
+function Phi(z){return 0.5*(1+erf(z/Math.SQRT2));}
+function pdf(x,mu,sig){return Math.exp(-0.5*((x-mu)/sig)**2)/(sig*Math.sqrt(2*Math.PI));}
+
+const S={mu:35,sig:8,q:'le',x:45,b:45,emp:false,scn:'delivery'};
+
+const cfg={
+  delivery:{tag:'Delivery SLA',muLabel:'Mean time, μ (min)',sigLabel:'Std dev, σ (min)',
+    unit:'min',noun:'delivery time',mu:[10,90,1,35],sig:[2,25,0.5,8],x:45,b:50,dec:0,
+    story:(m,s)=>`A Swiggy order arrives on average in <b>μ = ${m} min</b> with a spread of <b>σ = ${s} min</b>, roughly normal. X is the delivery time for one order — set x to the SLA promise to read compliance.`},
+  fill:{tag:'Fill weight',muLabel:'Target weight, μ (g)',sigLabel:'Std dev, σ (g)',
+    unit:'g',noun:'fill weight',mu:[180,220,1,200],sig:[0.5,8,0.5,3],x:195,b:205,dec:1,
+    story:(m,s)=>`An Amul packaging line fills pouches to a mean of <b>μ = ${m} g</b> with <b>σ = ${s} g</b>, normally distributed. X is the weight of one pouch.`},
+  plain:{tag:'Normal random variable',muLabel:'Mean, μ',sigLabel:'Std dev, σ',
+    unit:'',noun:'value',mu:[-20,20,1,0],sig:[0.5,12,0.5,1],x:1,b:2,dec:2,
+    story:(m,s)=>`<b>X ~ Normal(μ = ${m}, σ = ${s})</b>, the classic bell curve, symmetric about its mean.`}
+};
+
+const $=id=>document.getElementById(id);
+const muRange=$('muRange'),sigRange=$('sigRange'),xNum=$('xNum'),bNum=$('bNum');
+const fmt=v=>{const d=cfg[S.scn].dec;return (+v).toFixed(d);};
+const u=()=>cfg[S.scn].unit?(' '+cfg[S.scn].unit):'';
+
+function area(){
+  const m=S.mu,s=S.sig,x=+S.x,b=+S.b;
+  switch(S.q){
+    case 'le': return Phi((x-m)/s);
+    case 'ge': return 1-Phi((x-m)/s);
+    case 'rng':{const lo=Math.min(x,b),hi=Math.max(x,b);return Phi((hi-m)/s)-Phi((lo-m)/s);}
+    case 'out':{const lo=Math.min(x,b),hi=Math.max(x,b);return 1-(Phi((hi-m)/s)-Phi((lo-m)/s));}
+  }
+}
+function exprStr(){
+  const x=fmt(S.x),b=fmt(S.b);
+  switch(S.q){
+    case 'le':return `P(X ≤ ${x})`; case 'ge':return `P(X ≥ ${x})`;
+    case 'rng':{const lo=fmt(Math.min(+S.x,+S.b)),hi=fmt(Math.max(+S.x,+S.b));return `P(${lo} ≤ X ≤ ${hi})`;}
+    case 'out':{const lo=fmt(Math.min(+S.x,+S.b)),hi=fmt(Math.max(+S.x,+S.b));return `P(X<${lo} or X>${hi})`;}
+  }
+}
+function plainStr(p){
+  const c=cfg[S.scn],x=fmt(S.x),b=fmt(S.b),pctB=`<b>${(p*100).toFixed(1)}%</b>`;
+  if(S.scn==='plain') return `The shaded area is ${pctB} of the total.`;
+  let phrase;
+  switch(S.q){
+    case 'le': phrase=`at most ${x}${u()}`; break;
+    case 'ge': phrase=`at least ${x}${u()}`; break;
+    case 'rng':{const lo=fmt(Math.min(+S.x,+S.b)),hi=fmt(Math.max(+S.x,+S.b));phrase=`between ${lo} and ${hi}${u()}`;break;}
+    case 'out':{const lo=fmt(Math.min(+S.x,+S.b)),hi=fmt(Math.max(+S.x,+S.b));phrase=`outside ${lo}–${hi}${u()}`;break;}
+  }
+  return `About ${pctB} of ${c.noun}s fall <b>${phrase}</b>.`;
+}
+function zStr(){
+  const m=S.mu,s=S.sig;
+  const z=v=>((v-m)/s);
+  if(S.q==='le'||S.q==='ge'){
+    const zx=z(+S.x);
+    return `z = (x − μ)/σ = (${fmt(S.x)} − ${m}) / ${s} = <b>${zx.toFixed(2)}</b>  →  the boundary is ${Math.abs(zx).toFixed(2)}σ ${zx>=0?'above':'below'} the mean.`;
+  }else{
+    const lo=Math.min(+S.x,+S.b),hi=Math.max(+S.x,+S.b);
+    return `z<sub>a</sub> = <b>${z(lo).toFixed(2)}</b>,  z<sub>b</sub> = <b>${z(hi).toFixed(2)}</b>  (boundaries in σ units).`;
+  }
+}
+
+function render(){
+  const p=Math.min(1,Math.max(0,area()));
+  $('exprOut').textContent=exprStr();
+  $('probOut').textContent=p.toFixed(3);
+  $('pctOut').textContent=(p*100).toFixed(1)+'%';
+  $('plainOut').innerHTML=plainStr(p);
+  $('zOut').innerHTML=zStr();
+  $('mMean').textContent=S.mu; $('mSd').textContent=S.sig;
+  $('mMed').textContent=S.mu; $('mVar').textContent=(S.sig*S.sig).toFixed(cfg[S.scn].dec>0?1:0);
+  drawChart();
+}
+
+function drawChart(){
+  const svg=$('chart');
+  const W=720,H=340,mL=20,mR=20,mT=20,mB=46;
+  const iw=W-mL-mR, ih=H-mT-mB;
+  const m=S.mu,s=S.sig,xMin=m-4*s,xMax=m+4*s;
+  const px=x=>mL+(x-xMin)/(xMax-xMin)*iw;
+  const peak=pdf(m,m,s),yTop=peak*1.16, py=v=>mT+ih-(v/yTop)*ih;
+  const base=mT+ih;
+  const N=260, pts=[];
+  for(let i=0;i<=N;i++){const x=xMin+(i/N)*(xMax-xMin);pts.push([x,px(x),py(pdf(x,m,s))]);}
+
+  let out='';
+  // empirical-rule bands (drawn behind)
+  if(S.emp){
+    const bands=[[3,'#EEF2F8'],[2,'#E2E9F4'],[1,'#D3DEF0']];
+    bands.forEach(([k,col])=>{
+      out+=`<rect x="${px(m-k*s).toFixed(1)}" y="${mT}" width="${(px(m+k*s)-px(m-k*s)).toFixed(1)}" height="${ih}" fill="${col}"/>`;
+    });
+  }
+
+  // shaded query area
+  const region=[];
+  if(S.q==='le')region.push([xMin,+S.x]);
+  else if(S.q==='ge')region.push([+S.x,xMax]);
+  else{const lo=Math.min(+S.x,+S.b),hi=Math.max(+S.x,+S.b);
+    if(S.q==='rng')region.push([lo,hi]); else{region.push([xMin,lo]);region.push([hi,xMax]);}}
+  region.forEach(([lo,hi])=>{
+    lo=Math.max(lo,xMin);hi=Math.min(hi,xMax);if(hi<=lo)return;
+    let d=`M ${px(lo).toFixed(1)} ${base.toFixed(1)} `;
+    d+=`L ${px(lo).toFixed(1)} ${py(pdf(lo,m,s)).toFixed(1)} `;
+    for(let i=0;i<=N;i++){const x=pts[i][0];if(x>lo&&x<hi)d+=`L ${pts[i][1].toFixed(1)} ${pts[i][2].toFixed(1)} `;}
+    d+=`L ${px(hi).toFixed(1)} ${py(pdf(hi,m,s)).toFixed(1)} `;
+    d+=`L ${px(hi).toFixed(1)} ${base.toFixed(1)} Z`;
+    out+=`<path d="${d}" fill="var(--sel-fill)" opacity="0.30"/>`;
+  });
+
+  // curve
+  let cd='';pts.forEach((p,i)=>cd+=(i===0?'M':'L')+p[1].toFixed(1)+','+p[2].toFixed(1)+' ');
+  out+=`<path d="${cd}" fill="none" stroke="var(--sel)" stroke-width="2.4"/>`;
+
+  // baseline + mean line
+  out+=`<line x1="${mL}" y1="${base}" x2="${mL+iw}" y2="${base}" stroke="var(--ink)" stroke-width="1"/>`;
+  out+=`<line x1="${px(m).toFixed(1)}" y1="${py(peak).toFixed(1)}" x2="${px(m).toFixed(1)}" y2="${base}" stroke="var(--ink-soft)" stroke-width="1" stroke-dasharray="3 3"/>`;
+
+  // x ticks at mu-3s .. mu+3s
+  out+=`<g class="axis">`;
+  for(let k=-3;k<=3;k++){
+    const xv=m+k*s,X=px(xv);
+    out+=`<line x1="${X.toFixed(1)}" y1="${base}" x2="${X.toFixed(1)}" y2="${base+5}" stroke="var(--ink-soft)"/>`;
+    out+=`<text x="${X.toFixed(1)}" y="${base+18}" text-anchor="middle">${fmt(xv)}</text>`;
+    if(S.emp&&k!==0)out+=`<text x="${X.toFixed(1)}" y="${base+30}" text-anchor="middle" fill="var(--ink-soft)">${k>0?'+':''}${k}σ</text>`;
+  }
+  out+=`<text x="${(mL+iw/2).toFixed(1)}" y="${base+ (S.emp?42:34)}" text-anchor="middle" fill="var(--ink-soft)" style="font-size:11px">${cfg[S.scn].noun}${cfg[S.scn].unit?' ('+cfg[S.scn].unit+')':''}, X = x</text>`;
+  out+=`</g>`;
+
+  // empirical labels
+  if(S.emp){
+    const lab=(k,txt,dy)=>{const L=px(m-k*s),R=px(m+k*s),cx=(L+R)/2;
+      out+=`<text x="${cx.toFixed(1)}" y="${(mT+dy).toFixed(1)}" text-anchor="middle" fill="var(--ink-soft)" style="font-family:var(--mono);font-size:11px;font-weight:700">${txt}</text>`;};
+    lab(1,'68%',14); lab(2,'95%',30); lab(3,'99.7%',46);
+  }
+
+  svg.innerHTML=out;
+}
+
+function applyScenario(scn){
+  S.scn=scn;const c=cfg[scn];
+  document.querySelectorAll('#scenarioPick .chip').forEach(el=>el.setAttribute('aria-pressed',el.dataset.scn===scn));
+  $('scnTag').textContent=c.tag;$('muLabel').textContent=c.muLabel;$('sigLabel').textContent=c.sigLabel;
+  muRange.min=c.mu[0];muRange.max=c.mu[1];muRange.step=c.mu[2];muRange.value=c.mu[3];S.mu=c.mu[3];
+  sigRange.min=c.sig[0];sigRange.max=c.sig[1];sigRange.step=c.sig[2];sigRange.value=c.sig[3];S.sig=c.sig[3];
+  S.x=c.x;S.b=c.b;xNum.value=c.x;bNum.value=c.b;
+  xNum.step=c.mu[2];bNum.step=c.mu[2];
+  $('muVal').textContent=fmt(S.mu);$('sigVal').textContent=fmt(S.sig);
+  $('scnText').innerHTML=c.story(S.mu,S.sig);
+  render();
+}
+function refreshText(){$('scnText').innerHTML=cfg[S.scn].story(S.mu,S.sig);}
+
+muRange.addEventListener('input',e=>{S.mu=+e.target.value;$('muVal').textContent=fmt(S.mu);refreshText();render();});
+sigRange.addEventListener('input',e=>{S.sig=+e.target.value;$('sigVal').textContent=fmt(S.sig);refreshText();render();});
+document.querySelectorAll('#qtype .qbtn').forEach(btn=>{btn.addEventListener('click',()=>{
+  S.q=btn.dataset.q;document.querySelectorAll('#qtype .qbtn').forEach(x=>x.setAttribute('aria-pressed',x===btn));
+  const two=(S.q==='rng'||S.q==='out');
+  $('bField').style.display=two?'block':'none';$('xLbl').textContent=two?'a (lower)':'x';render();});});
+xNum.addEventListener('input',e=>{S.x=e.target.value===''?0:+e.target.value;render();});
+bNum.addEventListener('input',e=>{S.b=e.target.value===''?0:+e.target.value;render();});
+$('empToggle').addEventListener('change',e=>{S.emp=e.target.checked;render();});
+document.querySelectorAll('#scenarioPick .chip').forEach(c=>c.addEventListener('click',()=>applyScenario(c.dataset.scn)));
+
+applyScenario('delivery');
+</script>
+</body>
+</html>

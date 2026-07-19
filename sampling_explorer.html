@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sampling Distribution Explorer — BITSoM Business Statistics</title>
+<style>
+  :root{
+    --paper:#F5F7FA;
+    --panel:#FFFFFF;
+    --ink:#12203A;
+    --ink-soft:#4A5A73;
+    --hair:#DCE3EC;
+    --bar:#C3CFE0;
+    --bar-edge:#AEBDD2;
+    --sel:#1B4DB1;
+    --sel-edge:#153C8C;
+    --amber:#E0A93A;
+    --good:#1B8A5A;
+    --warn:#C4562B;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;
+    padding:28px 22px 48px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  h1{font-size:30px;line-height:1.05;letter-spacing:-.02em;font-weight:800;margin:0;}
+  h1 .b{color:var(--sel);}
+  .scenario-pick{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:600;border:1px solid var(--hair);
+    background:var(--panel);color:var(--ink-soft);padding:7px 12px;border-radius:999px;cursor:pointer;transition:.12s;}
+  .chip:hover{border-color:var(--sel);color:var(--sel);}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .scenario{background:var(--panel);border:1px solid var(--hair);border-left:4px solid var(--sel);
+    border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:15px;color:var(--ink);}
+  .scenario .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sel);display:block;margin-bottom:4px;}
+  .scenario b{font-weight:700;}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:18px;}
+  .card h2{font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px;font-weight:600;}
+  .ctrl{margin-bottom:18px;}
+  .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--sel);}
+  input[type=range]{width:100%;accent-color:var(--sel);height:22px;margin:0;cursor:pointer;}
+  .btnrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .abtn{font-family:var(--mono);font-size:13px;padding:10px 4px;border:1px solid var(--sel);
+    background:var(--sel);border-radius:6px;cursor:pointer;color:#fff;font-weight:700;transition:.1s;}
+  .abtn.secondary{background:var(--paper);color:var(--sel);}
+  .abtn.secondary:hover{background:#E9EFFA;}
+  .abtn:hover{filter:brightness(1.08);}
+  .abtn.reset{border-color:var(--hair);background:var(--paper);color:var(--ink-soft);font-weight:600;}
+  .abtn.reset:hover{border-color:var(--warn);color:var(--warn);}
+  .toggle{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13px;font-weight:600;cursor:pointer;user-select:none;}
+  .toggle input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;}
+  .moments{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--hair);
+    border:1px solid var(--hair);border-radius:8px;overflow:hidden;margin-top:16px;}
+  .moments div{background:var(--panel);padding:10px 12px;}
+  .moments .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .moments .v{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:2px;}
+  .moments .v.theory{color:var(--amber);}
+  .moments .v.sim{color:var(--sel);}
+  .chartcard{padding:14px 16px 8px;}
+  .chartcard + .chartcard{margin-top:14px;}
+  .chartcard .cap{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px;}
+  svg{width:100%;height:auto;display:block;overflow:visible;}
+  .axis text{font-family:var(--mono);font-size:10px;fill:var(--ink-soft);}
+  .axis line{stroke:var(--hair);}
+  .note{font-size:13px;color:var(--ink-soft);margin-top:10px;}
+  .note b{color:var(--sel);}
+  footer{margin-top:26px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.6;}
+  footer code{font-family:var(--mono);background:var(--panel);border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="brand">BITSoM &middot; Business Statistics &middot; Session 4</div>
+    <h1>The <span class="b">Sampling Distribution</span> Explorer</h1>
+  </div>
+  <div class="scenario-pick" id="scenarioPick" role="group" aria-label="Business scenario">
+    <button class="chip" data-scn="stream" aria-pressed="true">Streaming hours (skewed)</button>
+    <button class="chip" data-scn="order" aria-pressed="false">Order values &#8377; (skewed)</button>
+    <button class="chip" data-scn="delivery" aria-pressed="false">Delivery times (normal)</button>
+  </div>
+</header>
+
+<div class="scenario" id="scenarioBox"></div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Controls</h2>
+    <div class="ctrl">
+      <label>Sample size, n <span class="val" id="nVal">30</span></label>
+      <input type="range" id="nRange" min="2" max="500" step="1" value="30">
+    </div>
+    <div class="btnrow">
+      <button class="abtn" id="draw1">Draw 1 sample</button>
+      <button class="abtn secondary" id="draw100">Draw 100</button>
+      <button class="abtn secondary" id="draw1000">Draw 1,000</button>
+      <button class="abtn reset" id="reset">Reset</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="curveToggle" checked>
+      Overlay Normal(&mu;, &sigma;/&radic;n) &mdash; the CLT prediction</label>
+    <label class="toggle"><input type="checkbox" id="muToggle" checked>
+      Show population mean &mu;</label>
+
+    <div class="moments">
+      <div><div class="k">samples drawn, m</div><div class="v" id="mCount">0</div></div>
+      <div><div class="k">latest x&#772;</div><div class="v sim" id="lastMean">&mdash;</div></div>
+      <div><div class="k">mean of x&#772;'s (sim)</div><div class="v sim" id="simMean">&mdash;</div></div>
+      <div><div class="k">&mu; (theory)</div><div class="v theory" id="thMean"></div></div>
+      <div><div class="k">SD of x&#772;'s (sim)</div><div class="v sim" id="simSE">&mdash;</div></div>
+      <div><div class="k">&sigma;/&radic;n (theory)</div><div class="v theory" id="thSE"></div></div>
+    </div>
+    <p class="note" id="convergeNote"></p>
+  </div>
+
+  <div>
+    <div class="card chartcard">
+      <p class="cap" id="parentCap">Population &mdash; one sample of n drops in</p>
+      <svg id="parentChart" viewBox="0 0 720 190" role="img" aria-label="Parent population with latest sample"></svg>
+    </div>
+    <div class="card chartcard">
+      <p class="cap">Histogram of sample means x&#772; &mdash; the sampling distribution, built one sample at a time</p>
+      <svg id="meanChart" viewBox="0 0 720 260" role="img" aria-label="Histogram of sample means"></svg>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Classroom flow: click <code>Draw 1 sample</code> four or five times &mdash; watch each sample land a different x&#772;.
+  Then <code>Draw 1,000</code> &mdash; the histogram of means <em>is</em> the sampling distribution.
+  Double n and watch &sigma;/&radic;n shrink; the parent's skew disappears from the means. That is the CLT.
+</footer>
+</div>
+
+<script>
+/* ---------- scenarios (numbers match the Session 4 deck) ---------- */
+const scenarios = {
+  stream: {
+    label: 'Weekly streaming hours',
+    unit: 'hr', dec: 2,
+    mu: 8, sigma: 5.657,            // Gamma(k=2, θ=4): mean 8, sd 5.657 — same as deck figures
+    xmin: 0, xmax: 30,
+    draw: () => -4 * Math.log(Math.random() * Math.random()),   // sum of two Exp(θ=4)
+    pdf: x => x <= 0 ? 0 : (x / 16) * Math.exp(-x / 4),          // Gamma(2,4) density
+    story: 'A streaming platform\'s weekly viewing hours are <b>right-skewed</b> with ' +
+           '<b>&mu; = 8 hr</b> and <b>&sigma; &asymp; 5.66 hr</b> (the deck\'s population). ' +
+           'An analyst surveys <b>n</b> subscribers and reports the average.'
+  },
+  order: {
+    label: 'E-commerce order value',
+    unit: '₹', dec: 0,
+    mu: 1200, sigma: 500,           // lognormal calibrated to mean 1200, sd 500 — slides 20/22
+    xmin: 0, xmax: 3200,
+    draw: () => { const z = gauss(); return Math.exp(7.0101 + 0.4001 * z); },
+    pdf: x => x <= 0 ? 0 :
+      Math.exp(-Math.pow(Math.log(x) - 7.0101, 2) / (2 * 0.16008)) / (x * 0.4001 * Math.sqrt(2 * Math.PI)),
+    story: 'Order values on an Indian e-commerce app are <b>right-skewed</b> with ' +
+           '<b>&mu; = ₹1,200</b> and <b>&sigma; = ₹500</b> (the deck\'s Z-score example). ' +
+           'Each sample is <b>n</b> orders; we record the sample mean.'
+  },
+  delivery: {
+    label: 'Delivery time',
+    unit: 'min', dec: 1,
+    mu: 35, sigma: 8,               // matches the Normal Explorer's delivery scenario
+    xmin: 5, xmax: 65,
+    draw: () => 35 + 8 * gauss(),
+    pdf: x => Math.exp(-Math.pow(x - 35, 2) / (2 * 64)) / (8 * Math.sqrt(2 * Math.PI)),
+    story: 'Delivery times are roughly <b>normal</b> with <b>&mu; = 35 min</b>, <b>&sigma; = 8 min</b> ' +
+           '(the Normal Explorer\'s scenario). With a normal parent, x&#772; is exactly normal at <b>any</b> n.'
+  }
+};
+
+function gauss(){
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/* ---------- state ---------- */
+const S = { scn: 'stream', n: 30, means: [], lastSample: null };
+
+const $ = id => document.getElementById(id);
+
+/* ---------- sampling ---------- */
+function drawSamples(count){
+  const c = scenarios[S.scn];
+  let last = null;
+  for (let s = 0; s < count; s++){
+    let sum = 0;
+    const pts = count === 1 ? [] : null;
+    for (let i = 0; i < S.n; i++){
+      const x = c.draw();
+      sum += x;
+      if (pts) pts.push(x);
+    }
+    const mean = sum / S.n;
+    S.means.push(mean);
+    last = { mean, pts };
+  }
+  S.lastSample = last;
+  render();
+}
+
+/* ---------- stats helpers ---------- */
+function simStats(){
+  const m = S.means.length;
+  if (m === 0) return null;
+  const mean = S.means.reduce((a, b) => a + b, 0) / m;
+  if (m === 1) return { mean, sd: null };
+  const sd = Math.sqrt(S.means.reduce((a, b) => a + (b - mean) ** 2, 0) / (m - 1));
+  return { mean, sd };
+}
+
+/* ---------- rendering ---------- */
+const M = { l: 46, r: 14, t: 12, b: 30 };
+
+function xScale(x, W, c){ return M.l + (x - c.xmin) / (c.xmax - c.xmin) * (W - M.l - M.r); }
+
+function axisTicks(c, W, H){
+  const span = c.xmax - c.xmin;
+  const step = span > 1000 ? 500 : span > 100 ? 10 : 5;
+  let out = '';
+  for (let v = Math.ceil(c.xmin / step) * step; v <= c.xmax; v += step){
+    const x = xScale(v, W, c);
+    out += `<line x1="${x}" y1="${H - M.b}" x2="${x}" y2="${H - M.b + 4}"/>` +
+           `<text x="${x}" y="${H - M.b + 15}" text-anchor="middle">${v.toLocaleString('en-IN')}</text>`;
+  }
+  return `<g class="axis">${out}<line x1="${M.l}" y1="${H - M.b}" x2="${W - M.r}" y2="${H - M.b}"/></g>`;
+}
+
+function renderParent(){
+  const c = scenarios[S.scn], W = 720, H = 190;
+  const steps = 260;
+  let maxD = 0; const d = [];
+  for (let i = 0; i <= steps; i++){
+    const x = c.xmin + (c.xmax - c.xmin) * i / steps;
+    const y = c.pdf(x); d.push([x, y]); if (y > maxD) maxD = y;
+  }
+  const yS = y => (H - M.b) - y / (maxD * 1.12) * (H - M.t - M.b);
+  let path = '';
+  d.forEach(([x, y], i) => { path += (i ? 'L' : 'M') + xScale(x, W, c).toFixed(1) + ',' + yS(y).toFixed(1); });
+  let svg = `<path d="${path}" fill="none" stroke="var(--ink-soft)" stroke-width="1.6"/>`;
+  svg += `<path d="${path} L${xScale(c.xmax, W, c)},${H - M.b} L${xScale(c.xmin, W, c)},${H - M.b} Z" fill="var(--bar)" opacity="0.35" stroke="none"/>`;
+  if ($('muToggle').checked){
+    const x = xScale(c.mu, W, c);
+    svg += `<line x1="${x}" y1="${M.t}" x2="${x}" y2="${H - M.b}" stroke="var(--warn)" stroke-dasharray="5 4" stroke-width="1.5"/>` +
+           `<text x="${x + 5}" y="${M.t + 10}" font-size="11" font-family="var(--mono)" fill="var(--warn)">&mu; = ${fmt(c.mu)}</text>`;
+  }
+  if (S.lastSample && S.lastSample.pts){
+    S.lastSample.pts.forEach(x => {
+      if (x >= c.xmin && x <= c.xmax)
+        svg += `<circle cx="${xScale(x, W, c).toFixed(1)}" cy="${H - M.b - 8}" r="3" fill="var(--sel)" opacity="0.55"/>`;
+    });
+    const mx = xScale(S.lastSample.mean, W, c);
+    svg += `<line x1="${mx}" y1="${M.t + 18}" x2="${mx}" y2="${H - M.b}" stroke="var(--sel)" stroke-width="2.4"/>` +
+           `<text x="${mx + 5}" y="${M.t + 30}" font-size="11" font-family="var(--mono)" fill="var(--sel)" font-weight="700">x&#772; = ${fmt(S.lastSample.mean)}</text>`;
+  }
+  svg += axisTicks(c, W, H);
+  $('parentChart').innerHTML = svg;
+}
+
+function renderMeans(){
+  const c = scenarios[S.scn], W = 720, H = 260;
+  const bins = 60;
+  const counts = new Array(bins).fill(0);
+  const bw = (c.xmax - c.xmin) / bins;
+  S.means.forEach(v => {
+    const b = Math.floor((v - c.xmin) / bw);
+    if (b >= 0 && b < bins) counts[b]++;
+  });
+  const maxC = Math.max(1, ...counts);
+  let svg = '';
+  const y0 = H - M.b, plotH = H - M.t - M.b;
+  counts.forEach((ct, i) => {
+    if (!ct) return;
+    const x = xScale(c.xmin + i * bw, W, c);
+    const w = xScale(c.xmin + (i + 1) * bw, W, c) - x;
+    const h = ct / (maxC * 1.08) * plotH;
+    svg += `<rect x="${x.toFixed(1)}" y="${(y0 - h).toFixed(1)}" width="${Math.max(w - 0.8, 0.8).toFixed(1)}" height="${h.toFixed(1)}" fill="var(--bar)" stroke="var(--bar-edge)" stroke-width="0.5"/>`;
+  });
+  if ($('curveToggle').checked && S.means.length > 0){
+    const se = c.sigma / Math.sqrt(S.n);
+    const m = S.means.length;
+    const steps = 260;
+    let path = '';
+    for (let i = 0; i <= steps; i++){
+      const x = c.xmin + (c.xmax - c.xmin) * i / steps;
+      const dens = Math.exp(-((x - c.mu) ** 2) / (2 * se * se)) / (se * Math.sqrt(2 * Math.PI));
+      const expCount = dens * bw * m;                    // expected bin count under CLT
+      const y = y0 - Math.min(expCount / (maxC * 1.08), 1.15) * plotH;
+      path += (i ? 'L' : 'M') + xScale(x, W, c).toFixed(1) + ',' + y.toFixed(1);
+    }
+    svg += `<path d="${path}" fill="none" stroke="var(--amber)" stroke-width="2.2"/>`;
+  }
+  if ($('muToggle').checked){
+    const x = xScale(c.mu, W, c);
+    svg += `<line x1="${x}" y1="${M.t}" x2="${x}" y2="${y0}" stroke="var(--warn)" stroke-dasharray="5 4" stroke-width="1.5"/>`;
+  }
+  if (S.lastSample){
+    const mx = xScale(S.lastSample.mean, W, c);
+    svg += `<circle cx="${mx}" cy="${y0 - 5}" r="4.5" fill="var(--sel)"/>`;
+  }
+  svg += axisTicks(c, W, H);
+  $('meanChart').innerHTML = svg;
+}
+
+function fmt(v){
+  const c = scenarios[S.scn];
+  return c.unit === '₹'
+    ? '₹' + Math.round(v).toLocaleString('en-IN')
+    : v.toFixed(c.dec);
+}
+
+function render(){
+  const c = scenarios[S.scn];
+  $('nVal').textContent = S.n;
+  $('scenarioBox').innerHTML = `<span class="tag">${c.label}</span>${c.story}`;
+  $('thMean').textContent = fmt(c.mu);
+  $('thSE').textContent = fmt2(c.sigma / Math.sqrt(S.n));
+  $('mCount').textContent = S.means.length.toLocaleString('en-IN');
+  $('lastMean').textContent = S.lastSample ? fmt(S.lastSample.mean) : '—';
+  const st = simStats();
+  $('simMean').textContent = st ? fmt(st.mean) : '—';
+  $('simSE').textContent = st && st.sd !== null ? fmt2(st.sd) : '—';
+  $('parentCap').innerHTML = S.lastSample && S.lastSample.pts
+    ? `Population &mdash; latest sample of n = ${S.n} (dots) and its mean (blue line)`
+    : 'Population &mdash; click "Draw 1 sample" to drop a sample in';
+  $('convergeNote').innerHTML = S.means.length === 0
+    ? 'Blue numbers are simulated; amber numbers are the theory. Watch them converge.'
+    : (st && st.sd !== null
+       ? `Simulated SD of x&#772; = <b>${fmt2(st.sd)}</b> vs theory &sigma;/&radic;n = <b>${fmt2(c.sigma / Math.sqrt(S.n))}</b>.`
+       : 'One sample gives one x&#772;. Draw more to see its distribution.');
+  renderParent();
+  renderMeans();
+}
+
+function fmt2(v){
+  const c = scenarios[S.scn];
+  return c.unit === '₹' ? '₹' + v.toFixed(0) : v.toFixed(2);
+}
+
+/* ---------- events ---------- */
+document.querySelectorAll('#scenarioPick .chip').forEach(ch =>
+  ch.addEventListener('click', () => {
+    S.scn = ch.dataset.scn; S.means = []; S.lastSample = null;
+    document.querySelectorAll('#scenarioPick .chip').forEach(el =>
+      el.setAttribute('aria-pressed', el === ch ? 'true' : 'false'));
+    render();
+  }));
+$('nRange').addEventListener('input', e => {
+  S.n = +e.target.value; S.means = []; S.lastSample = null; render();
+});
+$('draw1').addEventListener('click', () => drawSamples(1));
+$('draw100').addEventListener('click', () => drawSamples(100));
+$('draw1000').addEventListener('click', () => drawSamples(1000));
+$('reset').addEventListener('click', () => { S.means = []; S.lastSample = null; render(); });
+$('curveToggle').addEventListener('change', render);
+$('muToggle').addEventListener('change', render);
+
+render();
+</script>
+</body>
+</html>

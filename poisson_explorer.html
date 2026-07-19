@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poisson Explorer — BITSoM Business Statistics</title>
+<style>
+  :root{
+    --paper:#F5F7FA;--panel:#FFFFFF;--ink:#12203A;--ink-soft:#4A5A73;--hair:#DCE3EC;
+    --bar:#C3CFE0;--bar-edge:#AEBDD2;--sel:#1B4DB1;--sel-edge:#153C8C;--amber:#E0A93A;
+    --good:#1B8A5A;--warn:#C4562B;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;padding:28px 22px 48px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  h1{font-size:30px;line-height:1.05;letter-spacing:-.02em;font-weight:800;margin:0;}
+  h1 .b{color:var(--sel);}
+  .scenario-pick{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:600;border:1px solid var(--hair);background:var(--panel);color:var(--ink-soft);padding:7px 12px;border-radius:999px;cursor:pointer;transition:.12s;}
+  .chip:hover{border-color:var(--sel);color:var(--sel);}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .scenario{background:var(--panel);border:1px solid var(--hair);border-left:4px solid var(--sel);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:15px;color:var(--ink);}
+  .scenario .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sel);display:block;margin-bottom:4px;}
+  .scenario b{font-weight:700;}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:18px;}
+  .card h2{font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px;font-weight:600;}
+  .ctrl{margin-bottom:18px;} .ctrl:last-child{margin-bottom:0;}
+  .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .ctrl label .sub{font-weight:400;color:var(--ink-soft);font-size:11.5px;}
+  .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--sel);}
+  input[type=range]{width:100%;accent-color:var(--sel);height:22px;margin:0;cursor:pointer;}
+  .num{width:74px;font-family:var(--mono);font-size:14px;padding:5px 8px;border:1px solid var(--hair);border-radius:6px;color:var(--ink);}
+  .num:focus{outline:2px solid var(--sel);outline-offset:0;border-color:var(--sel);}
+  .qtype{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+  .qbtn{font-family:var(--mono);font-size:13px;padding:8px 4px;border:1px solid var(--hair);background:var(--paper);border-radius:6px;cursor:pointer;color:var(--ink-soft);font-weight:600;transition:.1s;}
+  .qbtn:hover{border-color:var(--sel);}
+  .qbtn[aria-pressed="true"]{background:var(--sel);border-color:var(--sel);color:#fff;}
+  .xrow{display:flex;gap:14px;align-items:flex-end;}
+  .xrow .field{flex:1;} .xrow .field label{font-size:12px;font-weight:600;display:block;margin-bottom:5px;} .xrow .num{width:100%;}
+  .toggle{display:flex;align-items:center;gap:9px;margin-top:16px;font-size:13px;font-weight:600;cursor:pointer;user-select:none;}
+  .toggle input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;}
+  .readout{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .readout .expr{font-family:var(--mono);font-size:18px;color:var(--ink-soft);font-weight:600;}
+  .readout .eq{font-family:var(--mono);font-size:18px;color:var(--ink-soft);}
+  .readout .big{font-family:var(--mono);font-size:40px;font-weight:700;color:var(--sel);letter-spacing:-.01em;line-height:1;}
+  .readout .pct{font-family:var(--mono);font-size:16px;color:var(--ink-soft);}
+  .plain{font-size:14px;color:var(--ink);margin:2px 0 16px;} .plain b{color:var(--sel);}
+  .approx{border-top:1px dashed var(--hair);padding-top:12px;margin-top:4px;font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .approx .swatch{width:22px;height:3px;background:var(--amber);border-radius:2px;display:inline-block;}
+  .approx .aval{font-family:var(--mono);color:var(--amber);font-weight:700;font-size:14px;}
+  .flag{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700;letter-spacing:.03em;}
+  .flag.ok{background:#E5F3EC;color:var(--good);} .flag.no{background:#FBEAE3;color:var(--warn);}
+  .moments{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:8px;overflow:hidden;margin-top:16px;}
+  .moments div{background:var(--panel);padding:10px 12px;}
+  .moments .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .moments .v{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:2px;}
+  @media(max-width:520px){.moments{grid-template-columns:repeat(2,1fr);}}
+  .chartcard{padding:14px 16px 8px;}
+  svg{width:100%;height:auto;display:block;overflow:visible;}
+  .bar{transition:fill .1s;}
+  .axis text{font-family:var(--mono);font-size:10px;fill:var(--ink-soft);}
+  .axis line{stroke:var(--hair);}
+  footer{margin-top:26px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.6;}
+  footer code{font-family:var(--mono);background:var(--panel);border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="brand">BITSoM · Business Statistics</div>
+      <h1>The <span class="b">Poisson</span> Explorer</h1>
+    </div>
+    <div class="scenario-pick" id="scenarioPick" role="group" aria-label="Business scenario">
+      <button class="chip" data-scn="calls" aria-pressed="true">BPO call centre</button>
+      <button class="chip" data-scn="steel">Tata Steel</button>
+      <button class="chip" data-scn="plain">Plain (X)</button>
+    </div>
+  </header>
+
+  <div class="scenario" id="scenarioBox">
+    <span class="tag" id="scnTag">BPO call centre</span>
+    <span id="scnText"></span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Parameters</h2>
+
+      <div class="ctrl">
+        <label for="lRange"><span id="lLabel">Average rate, λ</span> <span class="val" id="lVal">4.0</span></label>
+        <input type="range" id="lRange" min="0.1" max="40" value="4" step="0.1">
+      </div>
+
+      <div class="ctrl">
+        <label>Probability query <span class="sub">what to compute</span></label>
+        <div class="qtype" id="qtype" role="group" aria-label="Query type">
+          <button class="qbtn" data-q="eq"  aria-pressed="false">P(X = x)</button>
+          <button class="qbtn" data-q="le"  aria-pressed="true">P(X ≤ x)</button>
+          <button class="qbtn" data-q="lt"  aria-pressed="false">P(X &lt; x)</button>
+          <button class="qbtn" data-q="ge"  aria-pressed="false">P(X ≥ x)</button>
+          <button class="qbtn" data-q="gt"  aria-pressed="false">P(X &gt; x)</button>
+          <button class="qbtn" data-q="rng" aria-pressed="false">P(a ≤ X ≤ b)</button>
+        </div>
+        <div class="xrow">
+          <div class="field" id="xField">
+            <label for="xNum" id="xLbl">x</label>
+            <input class="num" type="number" id="xNum" value="4" min="0">
+          </div>
+          <div class="field" id="bField" style="display:none;">
+            <label for="bNum">b (upper)</label>
+            <input class="num" type="number" id="bNum" value="8" min="0">
+          </div>
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" id="normToggle">
+        Show normal approximation
+      </label>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="readout">
+          <span class="expr" id="exprOut">P(X ≤ 4)</span>
+          <span class="eq">=</span>
+          <span class="big" id="probOut">0.629</span>
+          <span class="pct" id="pctOut">62.9%</span>
+        </div>
+        <div class="plain" id="plainOut"></div>
+        <div class="approx" id="approxRow" style="display:none;">
+          <span class="swatch"></span>
+          Normal approx (continuity corrected):
+          <span class="aval" id="approxOut">—</span>
+          <span class="flag" id="approxFlag">—</span>
+        </div>
+        <div class="moments">
+          <div><div class="k">Mean  λ</div><div class="v" id="mMean">4.00</div></div>
+          <div><div class="k">Std dev  √λ</div><div class="v" id="mSd">2.00</div></div>
+          <div><div class="k">Variance  λ</div><div class="v" id="mVar">4.00</div></div>
+          <div><div class="k">Most likely</div><div class="v" id="mMode">4</div></div>
+        </div>
+      </div>
+      <div class="card chartcard">
+        <svg id="chart" viewBox="0 0 720 340" role="img" aria-label="Poisson probability mass function"></svg>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Poisson counts independent events in a fixed window at a steady rate — the count itself can be large. Mean and variance are both λ; that's its signature (and your check: if variance ≫ mean, it isn't Poisson).<br>
+    Toggle the normal approximation: as λ grows the bars settle into a symmetric bell.
+  </footer>
+</div>
+
+<script>
+/* math */
+function logGamma(z){const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(z<0.5)return Math.log(Math.PI/Math.sin(Math.PI*z))-logGamma(1-z);z-=1;let x=c[0];for(let i=1;i<g+2;i++)x+=c[i]/(z+i);const t=z+g+0.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);}
+function poisPMF(x,l){if(x<0)return 0;if(l<=0)return x===0?1:0;return Math.exp(-l+x*Math.log(l)-logGamma(x+1));}
+function erf(x){const t=1/(1+0.3275911*Math.abs(x));const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return x>=0?y:-y;}
+function Phi(z){return 0.5*(1+erf(z/Math.SQRT2));}
+
+const S={l:4,q:'le',x:4,b:8,norm:false,scn:'calls'};
+
+const scenarios={
+  calls:{tag:'BPO call centre',lLabel:'Calls per hour, λ',noun:'calls',verb:'arrive',where:'in the hour',
+    story:(l)=>`Within a single shift, a Bengaluru BPO helpline receives on average <b>λ = ${l.toFixed(1)} calls per hour</b>, arriving independently at a steady rate. X counts the calls in a given hour.`},
+  steel:{tag:'Tata Steel defects',lLabel:'Defects per m², λ',noun:'defects',verb:'appear',where:'on a square metre',
+    story:(l)=>`A Tata Steel galvanising line averages <b>λ = ${l.toFixed(1)} surface defects per square metre</b>, occurring independently across the sheet. X counts the defects on one square metre — Poisson in <b>space</b>, not time.`},
+  plain:{tag:'Poisson random variable',lLabel:'Rate, λ',noun:'events',verb:'occur',where:'in the window',
+    story:(l)=>`<b>X ~ Poisson(λ = ${l.toFixed(1)})</b> counts independent events in a fixed window, at a constant average rate of ${l.toFixed(1)}.`}
+};
+
+const $=id=>document.getElementById(id);
+const lRange=$('lRange'),xNum=$('xNum'),bNum=$('bNum');
+
+function xMaxDisplay(){return Math.min(80,Math.max(12,Math.ceil(S.l+4*Math.sqrt(S.l))));}
+function clampX(v){return Math.max(0,Math.round(v));}
+
+function selectedKs(){
+  const x=clampX(S.x),b=clampX(S.b),ks=new Set();const cap=Math.max(xMaxDisplay(),x,b);
+  const add=(a,z)=>{for(let k=Math.max(0,a);k<=z;k++)ks.add(k);};
+  switch(S.q){
+    case 'eq': ks.add(x); break;
+    case 'le': add(0,x); break;
+    case 'lt': add(0,x-1); break;
+    case 'ge': add(x,cap); break;
+    case 'gt': add(x+1,cap); break;
+    case 'rng': add(Math.min(x,b),Math.max(x,b)); break;
+  }
+  return ks;
+}
+function exprStr(){
+  const x=clampX(S.x),b=clampX(S.b);
+  switch(S.q){
+    case 'eq':return `P(X = ${x})`; case 'le':return `P(X ≤ ${x})`; case 'lt':return `P(X < ${x})`;
+    case 'ge':return `P(X ≥ ${x})`; case 'gt':return `P(X > ${x})`;
+    case 'rng':{const lo=Math.min(x,b),hi=Math.max(x,b);return `P(${lo} ≤ X ≤ ${hi})`;}
+  }
+}
+function plainStr(prob){
+  const s=scenarios[S.scn],x=clampX(S.x),b=clampX(S.b);
+  const pctB=`<b>${(prob*100).toFixed(1)}%</b>`;
+  if(S.scn==='plain') return `There is a ${pctB} chance the count falls in the highlighted region.`;
+  let phrase;
+  switch(S.q){
+    case 'eq': phrase=`exactly ${x}`; break; case 'le': phrase=`at most ${x}`; break;
+    case 'lt': phrase=`fewer than ${x}`; break; case 'ge': phrase=`at least ${x}`; break;
+    case 'gt': phrase=`more than ${x}`; break;
+    case 'rng':{const lo=Math.min(x,b),hi=Math.max(x,b);phrase=`between ${lo} and ${hi}`;break;}
+  }
+  return `There is a ${pctB} chance that <b>${phrase}</b> ${s.noun} ${s.verb} ${s.where}.`;
+}
+function normApprox(){
+  const l=S.l,mu=l,sig=Math.sqrt(l);if(sig<=0)return null;
+  const x=clampX(S.x),b=clampX(S.b),cc=v=>(v-mu)/sig;
+  switch(S.q){
+    case 'eq': return Phi(cc(x+0.5))-Phi(cc(x-0.5));
+    case 'le': return Phi(cc(x+0.5)); case 'lt': return Phi(cc(x-0.5));
+    case 'ge': return 1-Phi(cc(x-0.5)); case 'gt': return 1-Phi(cc(x+0.5));
+    case 'rng':{const lo=Math.min(x,b),hi=Math.max(x,b);return Phi(cc(hi+0.5))-Phi(cc(lo-0.5));}
+  }
+}
+
+function render(){
+  const l=S.l, cap=Math.max(300,Math.ceil(l+12*Math.sqrt(l))+10);
+  const pmf=[];let maxP=0;const disp=xMaxDisplay();
+  for(let x=0;x<=cap;x++){const v=poisPMF(x,l);pmf.push(v);if(x<=disp&&v>maxP)maxP=v;}
+  const sel=selectedKs();
+  let prob=0;sel.forEach(k=>{if(k<pmf.length)prob+=pmf[k];});
+  prob=Math.min(1,Math.max(0,prob));
+
+  $('exprOut').textContent=exprStr();
+  $('probOut').textContent=prob.toFixed(3);
+  $('pctOut').textContent=(prob*100).toFixed(1)+'%';
+  $('plainOut').innerHTML=plainStr(prob);
+
+  $('mMean').textContent=l.toFixed(2);
+  $('mSd').textContent=Math.sqrt(l).toFixed(2);
+  $('mVar').textContent=l.toFixed(2);
+  $('mMode').textContent=Math.floor(l);
+
+  const row=$('approxRow');
+  if(S.norm){
+    row.style.display='flex';const a=normApprox();
+    $('approxOut').textContent=a==null?'n/a':a.toFixed(3)+'  ('+(a*100).toFixed(1)+'%)';
+    const ok=l>=10;const flag=$('approxFlag');
+    flag.className='flag '+(ok?'ok':'no');
+    flag.textContent=ok?'λ ≥ 10 ✓':'λ < 10 — approx rough';
+  }else row.style.display='none';
+
+  drawChart(pmf,maxP,sel,disp);
+}
+
+function drawChart(pmf,maxP,sel,disp){
+  const svg=$('chart');
+  const W=720,H=340,mL=44,mR=14,mT=16,mB=42;
+  const iw=W-mL-mR, ih=H-mT-mB, n=disp;
+  const yTop=Math.max(maxP*1.12,0.001), yScale=v=>ih-(v/yTop)*ih;
+  const barW=iw/(n+1), bw=Math.max(1,barW*0.82);
+  let s=`<g transform="translate(${mL},${mT})">`;
+  s+=`<g class="axis">`;
+  for(let i=0;i<=4;i++){const val=yTop*i/4,y=yScale(val);
+    s+=`<line x1="0" y1="${y.toFixed(1)}" x2="${iw}" y2="${y.toFixed(1)}"/>`;
+    s+=`<text x="-8" y="${(y+3).toFixed(1)}" text-anchor="end">${val.toFixed(2)}</text>`;}
+  s+=`</g>`;
+  for(let k=0;k<=n;k++){
+    const x=k*barW+(barW-bw)/2,y=yScale(pmf[k]||0),h=ih-y,on=sel.has(k);
+    s+=`<rect class="bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,h).toFixed(1)}" fill="${on?'var(--sel)':'var(--bar)'}" stroke="${on?'var(--sel-edge)':'var(--bar-edge)'}" stroke-width="0.5" rx="1"><title>P(X = ${k}) = ${(pmf[k]||0).toFixed(4)}</title></rect>`;
+  }
+  const step=n<=20?1:(n<=50?5:10);
+  s+=`<g class="axis"><line x1="0" y1="${ih}" x2="${iw}" y2="${ih}" stroke="var(--ink)" stroke-width="1"/>`;
+  for(let k=0;k<=n;k+=step){const cx=k*barW+barW/2;s+=`<text x="${cx.toFixed(1)}" y="${ih+16}" text-anchor="middle">${k}</text>`;}
+  s+=`<text x="${iw/2}" y="${ih+36}" text-anchor="middle" fill="var(--ink-soft)" style="font-size:11px">number of ${scenarios[S.scn].noun}, X = x</text></g>`;
+  if(S.norm){
+    const mu=S.l,sig=Math.sqrt(S.l);
+    if(sig>0){const pdf=x=>Math.exp(-0.5*((x-mu)/sig)**2)/(sig*Math.sqrt(2*Math.PI));
+      let d='';for(let i=0;i<=200;i++){const kx=(i/200)*n,px=kx*barW+barW/2,py=yScale(pdf(kx));d+=(i===0?'M':'L')+px.toFixed(1)+','+py.toFixed(1)+' ';}
+      s+=`<path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2.4" stroke-linejoin="round" opacity="0.95"/>`;}
+  }
+  s+=`</g>`;svg.innerHTML=s;
+}
+
+function setScenario(scn){
+  S.scn=scn;const s=scenarios[scn];
+  document.querySelectorAll('#scenarioPick .chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.scn===scn));
+  $('scnTag').textContent=s.tag;$('lLabel').textContent=s.lLabel;
+  $('scnText').innerHTML=s.story(S.l);render();
+}
+function refreshText(){$('scnText').innerHTML=scenarios[S.scn].story(S.l);}
+
+lRange.addEventListener('input',e=>{S.l=+e.target.value;$('lVal').textContent=S.l.toFixed(1);refreshText();render();});
+document.querySelectorAll('#qtype .qbtn').forEach(b=>{b.addEventListener('click',()=>{
+  S.q=b.dataset.q;document.querySelectorAll('#qtype .qbtn').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  $('bField').style.display=(S.q==='rng')?'block':'none';$('xLbl').textContent=(S.q==='rng')?'a (lower)':'x';render();});});
+xNum.addEventListener('input',e=>{S.x=+e.target.value||0;render();});
+bNum.addEventListener('input',e=>{S.b=+e.target.value||0;render();});
+$('normToggle').addEventListener('change',e=>{S.norm=e.target.checked;render();});
+document.querySelectorAll('#scenarioPick .chip').forEach(c=>c.addEventListener('click',()=>setScenario(c.dataset.scn)));
+
+setScenario('calls');
+</script>
+</body>
+</html>
