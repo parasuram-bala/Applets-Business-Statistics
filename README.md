@@ -24,4 +24,4 @@ everything runs locally, no internet needed.
 
 ---
 
-*Prof. Parasuram Balasubramanian · BITSoM · Term 1, 2026–27*
+*Prof. Parasuram Balasubramanian · BITSoM 
