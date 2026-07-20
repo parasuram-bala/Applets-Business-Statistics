@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power Explorer — BITSoM Business Statistics</title>
+<style>
+  :root{
+    --paper:#F5F7FA; --panel:#FFFFFF; --ink:#12203A; --ink-soft:#4A5A73;
+    --hair:#DCE3EC; --bar:#C3CFE0; --bar-edge:#AEBDD2; --sel:#1B4DB1; --sel-edge:#153C8C;
+    --amber:#E0A93A; --good:#1B8A5A; --warn:#C4562B;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;
+    padding:28px 22px 48px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  h1{font-size:30px;line-height:1.05;letter-spacing:-.02em;font-weight:800;margin:0;}
+  h1 .b{color:var(--sel);}
+  .scenario-pick{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:600;border:1px solid var(--hair);
+    background:var(--panel);color:var(--ink-soft);padding:7px 12px;border-radius:999px;cursor:pointer;transition:.12s;}
+  .chip:hover{border-color:var(--sel);color:var(--sel);}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .scenario{background:var(--panel);border:1px solid var(--hair);border-left:4px solid var(--sel);
+    border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:15px;}
+  .scenario .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sel);display:block;margin-bottom:4px;}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:18px;}
+  .card h2{font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px;font-weight:600;}
+  .ctrl{margin-bottom:16px;}
+  .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--sel);}
+  input[type=range]{width:100%;accent-color:var(--sel);height:22px;margin:0;cursor:pointer;}
+  .readout{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:4px 0 2px;}
+  .readout .expr{font-family:var(--mono);font-size:17px;color:var(--ink-soft);font-weight:600;}
+  .readout .big{font-family:var(--mono);font-size:40px;font-weight:700;color:var(--good);line-height:1;}
+  .moments{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--hair);
+    border:1px solid var(--hair);border-radius:8px;overflow:hidden;margin-top:16px;}
+  .moments div{background:var(--panel);padding:10px 12px;}
+  .moments .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .moments .v{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:2px;}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-soft);margin-top:8px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .sw{width:16px;height:10px;border-radius:2px;display:inline-block;}
+  .chartcard{padding:14px 16px 8px;}
+  .chartcard .cap{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px;}
+  svg{width:100%;height:auto;display:block;overflow:visible;}
+  .axis text{font-family:var(--mono);font-size:10px;fill:var(--ink-soft);}
+  .axis line{stroke:var(--hair);}
+  .note{font-size:13px;color:var(--ink-soft);margin-top:12px;}
+  footer{margin-top:26px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.6;}
+  footer code{font-family:var(--mono);background:var(--panel);border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="brand">BITSoM &middot; Business Statistics &middot; Session 6</div>
+    <h1>The <span class="b">Power</span> Explorer</h1>
+  </div>
+  <div class="scenario-pick" id="scenarioPick" role="group">
+    <button class="chip" data-scn="ab" aria-pressed="true">A/B conversion test</button>
+    <button class="chip" data-scn="promo" aria-pressed="false">Promo uplift (means)</button>
+    <button class="chip" data-scn="plain" aria-pressed="false">Plain two-sample</button>
+  </div>
+</header>
+
+<div class="scenario" id="scenarioBox"></div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Design the test</h2>
+    <div class="ctrl"><label><span id="dLabel">True uplift, &delta;</span> <span class="val" id="dVal"></span></label>
+      <input type="range" id="dRange"></div>
+    <div class="ctrl"><label>Sample size per group, n <span class="val" id="nVal"></span></label>
+      <input type="range" id="nRange" min="20" max="5000" step="20"></div>
+    <div class="ctrl"><label>Significance level, &alpha; (one-sided) <span class="val" id="aVal"></span></label>
+      <input type="range" id="aRange" min="0.01" max="0.10" step="0.01" value="0.05"></div>
+    <div class="readout"><span class="expr">Power</span><span class="big" id="powVal"></span></div>
+    <div class="moments">
+      <div><div class="k">SE of difference</div><div class="v" id="seVal"></div></div>
+      <div><div class="k">critical value</div><div class="v" id="critVal"></div></div>
+      <div><div class="k">&alpha; — false alarm</div><div class="v" id="aOut" style="color:var(--warn)"></div></div>
+      <div><div class="k">&beta; — miss rate</div><div class="v" id="bOut" style="color:var(--amber)"></div></div>
+    </div>
+    <p class="note" id="verdict"></p>
+  </div>
+
+  <div class="card chartcard">
+    <p class="cap">Sampling distribution of the observed difference — under H&#8320; (no effect) and under the true effect &delta;</p>
+    <svg id="chart" viewBox="0 0 720 330"></svg>
+    <div class="legend">
+      <span><span class="sw" style="background:#C4562B55;border:1px solid var(--warn)"></span>Type I error (&alpha;): H&#8320; true, we still reject</span>
+      <span><span class="sw" style="background:#E0A93A66;border:1px solid var(--amber)"></span>Type II error (&beta;): effect real, we miss it</span>
+      <span><span class="sw" style="background:#1B8A5A44;border:1px solid var(--good)"></span>Power (1&minus;&beta;): effect real, we detect it</span>
+    </div>
+    <p class="note">The two curves are two possible worlds. The dashed line is your decision rule.
+      Moving &alpha;, n, or &delta; just moves how the two worlds fall on either side of it.</p>
+  </div>
+</div>
+
+<footer>
+  Power is the chance your test detects an effect that is really there. Underpowered tests miss real effects &mdash;
+  "not significant" is not the same as "no effect."
+</footer>
+</div>
+
+<script>
+const scenarios = {
+  ab: { kind: 'prop', base: 0.030, dmin: 0.001, dmax: 0.012, dstep: 0.0005, d: 0.004, n: 1000,
+    dLabel: 'True uplift, &delta; (conversion)', unit: 'pp', dec: 2,
+    story: 'Baseline checkout conversion is <b>3.0%</b>. A new flow truly converts at 3.0% + &delta;. ' +
+           'We A/B test with <b>n</b> visitors per arm and reject H&#8320; (no uplift) when the observed difference is large enough. ' +
+           'One-sided test on the difference in proportions.' },
+  promo: { kind: 'mean', sigma: 400, dmin: 5, dmax: 120, dstep: 5, d: 40, n: 200,
+    dLabel: 'True AOV lift, &delta; (₹)', unit: '₹', dec: 0,
+    story: 'A Diwali promo truly lifts average order value by <b>&delta;</b> over the control journey. ' +
+           'Order values have &sigma; = ₹400. We compare mean AOV between promo and control groups of <b>n</b> orders each.' },
+  plain: { kind: 'mean', sigma: 1, dmin: 0.05, dmax: 1, dstep: 0.05, d: 0.3, n: 50,
+    dLabel: 'True effect, &delta; (in &sigma; units)', unit: '', dec: 2,
+    story: '<b>Two groups, true difference &delta;, &sigma; = 1.</b> The abstract version — &delta; reads as Cohen\'s d.' }
+};
+function Phi(z){
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+  let p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return z >= 0 ? 1 - p : p;
+}
+function PhiInv(p){          // Acklam-lite via bisection (adequate for UI)
+  let lo = -6, hi = 6;
+  for (let i = 0; i < 60; i++){ const m = (lo + hi) / 2; (Phi(m) < p) ? lo = m : hi = m; }
+  return (lo + hi) / 2;
+}
+const S = { scn: 'ab', d: 0.004, n: 1000, alpha: 0.05 };
+const $ = id => document.getElementById(id);
+function cfg(){ return scenarios[S.scn]; }
+function seDiff(){
+  const c = cfg();
+  if (c.kind === 'prop'){
+    const p1 = c.base, p2 = c.base + S.d;
+    return Math.sqrt(p1 * (1 - p1) / S.n + p2 * (1 - p2) / S.n);
+  }
+  return c.sigma * Math.sqrt(2 / S.n);
+}
+function crit(){ return PhiInv(1 - S.alpha) * seDiff(); }
+function power(){ return 1 - Phi((crit() - S.d) / seDiff()); }
+
+const M = { l: 50, r: 16, t: 16, b: 34 }, W = 720, H = 330;
+
+function fmtD(v){
+  const c = cfg();
+  if (c.kind === 'prop') return (v * 100).toFixed(2) + ' pp';
+  return c.unit === '₹' ? '₹' + Math.round(v) : v.toFixed(c.dec);
+}
+
+function render(){
+  const c = cfg();
+  $('dRange').min = c.dmin; $('dRange').max = c.dmax; $('dRange').step = c.dstep; $('dRange').value = S.d;
+  $('nRange').value = S.n; $('aRange').value = S.alpha;
+  $('dLabel').innerHTML = c.dLabel;
+  $('scenarioBox').innerHTML = `<span class="tag">${S.scn === 'ab' ? 'Growth experiment' : S.scn === 'promo' ? 'Marketing test' : 'Abstract'}</span>${c.story}`;
+  $('dVal').textContent = fmtD(S.d);
+  $('nVal').textContent = S.n.toLocaleString('en-IN');
+  $('aVal').textContent = S.alpha.toFixed(2);
+  const se = seDiff(), cv = crit(), pw = power();
+  $('seVal').textContent = c.kind === 'prop' ? (se * 100).toFixed(3) + ' pp' : fmtD(se);
+  $('critVal').textContent = fmtD(cv);
+  $('aOut').textContent = (S.alpha * 100).toFixed(0) + '%';
+  $('bOut').textContent = ((1 - pw) * 100).toFixed(1) + '%';
+  $('powVal').textContent = (pw * 100).toFixed(1) + '%';
+  $('powVal').style.color = pw >= 0.8 ? 'var(--good)' : pw >= 0.5 ? 'var(--amber)' : 'var(--warn)';
+  $('verdict').innerHTML = pw >= 0.8
+    ? 'Industry convention says power &ge; 80% — this design clears it. The test will catch a real effect ' +
+      (pw * 100).toFixed(0) + '% of the time.'
+    : pw >= 0.5
+    ? 'Underpowered. A real effect would be missed ' + ((1 - pw) * 100).toFixed(0) +
+      '% of the time — and "no significant difference" would be wrongly read as "no effect."'
+    : '<b style="color:var(--warn)">Severely underpowered.</b> Running this test is close to flipping a coin — raise n or accept only detecting bigger effects.';
+
+  // chart: densities of observed difference under H0 (mean 0) and H1 (mean d)
+  const xmin = -4 * se, xmax = S.d + 4 * se;
+  const xS = x => M.l + (x - xmin) / (xmax - xmin) * (W - M.l - M.r);
+  const maxD = 1 / (se * Math.sqrt(2 * Math.PI));
+  const yS = y => (H - M.b) - y / (maxD * 1.12) * (H - M.t - M.b);
+  const dens = (x, m) => Math.exp(-((x - m) ** 2) / (2 * se * se)) / (se * Math.sqrt(2 * Math.PI));
+  function curve(m){ let p = ''; for (let i = 0; i <= 300; i++){ const x = xmin + (xmax - xmin) * i / 300; p += (i ? 'L' : 'M') + xS(x).toFixed(1) + ',' + yS(dens(x, m)).toFixed(1); } return p; }
+  function region(a, b, m, fill, op){
+    let p = `M${xS(a).toFixed(1)},${H - M.b}`;
+    for (let i = 0; i <= 140; i++){ const x = a + (b - a) * i / 140; p += 'L' + xS(x).toFixed(1) + ',' + yS(dens(x, m)).toFixed(1); }
+    p += `L${xS(b).toFixed(1)},${H - M.b} Z`;
+    return `<path d="${p}" fill="${fill}" opacity="${op}" stroke="none"/>`;
+  }
+  let svg = '';
+  svg += region(cv, xmax, 0, 'var(--warn)', 0.33);          // Type I under H0
+  svg += region(xmin, cv, S.d, 'var(--amber)', 0.40);       // Type II under H1
+  svg += region(cv, xmax, S.d, 'var(--good)', 0.27);        // Power under H1
+  svg += `<path d="${curve(0)}" fill="none" stroke="var(--ink-soft)" stroke-width="1.8"/>`;
+  svg += `<path d="${curve(S.d)}" fill="none" stroke="var(--sel)" stroke-width="1.8"/>`;
+  svg += `<line x1="${xS(cv)}" y1="${M.t}" x2="${xS(cv)}" y2="${H - M.b}" stroke="var(--ink)" stroke-dasharray="6 4" stroke-width="1.6"/>` +
+         `<text x="${xS(cv) + 5}" y="${M.t + 11}" font-family="var(--mono)" font-size="11" fill="var(--ink)">reject beyond here</text>`;
+  svg += `<text x="${xS(0)}" y="${H - M.b + 28}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--ink-soft)">H&#8320;: no effect</text>` +
+         `<text x="${xS(S.d)}" y="${H - M.b + 28}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--sel)">truth: &delta; = ${fmtD(S.d)}</text>`;
+  let ax = `<line x1="${M.l}" y1="${H - M.b}" x2="${W - M.r}" y2="${H - M.b}"/>`;
+  svg += `<g class="axis">${ax}</g>`;
+  $('chart').innerHTML = svg;
+}
+
+document.querySelectorAll('#scenarioPick .chip').forEach(ch => ch.addEventListener('click', () => {
+  S.scn = ch.dataset.scn;
+  const c = cfg(); S.d = c.d; S.n = c.n;
+  document.querySelectorAll('#scenarioPick .chip').forEach(el => el.setAttribute('aria-pressed', el === ch ? 'true' : 'false'));
+  render();
+}));
+$('dRange').addEventListener('input', e => { S.d = +e.target.value; render(); });
+$('nRange').addEventListener('input', e => { S.n = +e.target.value; render(); });
+$('aRange').addEventListener('input', e => { S.alpha = +e.target.value; render(); });
+render();
+</script>
+</body>
+</html>

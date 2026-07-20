@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>p-value Explorer — BITSoM Business Statistics</title>
+<style>
+  :root{
+    --paper:#F5F7FA; --panel:#FFFFFF; --ink:#12203A; --ink-soft:#4A5A73;
+    --hair:#DCE3EC; --bar:#C3CFE0; --bar-edge:#AEBDD2; --sel:#1B4DB1; --sel-edge:#153C8C;
+    --amber:#E0A93A; --good:#1B8A5A; --warn:#C4562B;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;
+    padding:28px 22px 48px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+    border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  h1{font-size:30px;line-height:1.05;letter-spacing:-.02em;font-weight:800;margin:0;}
+  h1 .b{color:var(--sel);}
+  .scenario-pick{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:600;border:1px solid var(--hair);
+    background:var(--panel);color:var(--ink-soft);padding:7px 12px;border-radius:999px;cursor:pointer;transition:.12s;}
+  .chip:hover{border-color:var(--sel);color:var(--sel);}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .scenario{background:var(--panel);border:1px solid var(--hair);border-left:4px solid var(--sel);
+    border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:15px;}
+  .scenario .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--sel);display:block;margin-bottom:4px;}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:18px;}
+  .card h2{font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px;font-weight:600;}
+  .ctrl{margin-bottom:16px;}
+  .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--sel);}
+  input[type=range]{width:100%;accent-color:var(--sel);height:22px;margin:0;cursor:pointer;}
+  .qtype{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px;}
+  .qbtn{font-family:var(--mono);font-size:12.5px;padding:8px 4px;border:1px solid var(--hair);background:var(--paper);
+    border-radius:6px;cursor:pointer;color:var(--ink-soft);font-weight:600;transition:.1s;}
+  .qbtn:hover{border-color:var(--sel);}
+  .qbtn[aria-pressed="true"]{background:var(--sel);border-color:var(--sel);color:#fff;}
+  .readout{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:4px 0 2px;}
+  .readout .expr{font-family:var(--mono);font-size:17px;color:var(--ink-soft);font-weight:600;}
+  .readout .big{font-family:var(--mono);font-size:40px;font-weight:700;color:var(--sel);line-height:1;}
+  .flag{font-family:var(--mono);font-size:12px;padding:4px 12px;border-radius:999px;font-weight:700;letter-spacing:.03em;}
+  .flag.rej{background:#FBEAE3;color:var(--warn);}
+  .flag.fail{background:#E5F3EC;color:var(--good);}
+  .moments{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--hair);
+    border:1px solid var(--hair);border-radius:8px;overflow:hidden;margin-top:16px;}
+  .moments div{background:var(--panel);padding:10px 12px;}
+  .moments .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+  .moments .v{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:2px;}
+  .chartcard{padding:14px 16px 8px;}
+  .chartcard .cap{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px;}
+  svg{width:100%;height:auto;display:block;overflow:visible;}
+  .axis text{font-family:var(--mono);font-size:10px;fill:var(--ink-soft);}
+  .axis line{stroke:var(--hair);}
+  .note{font-size:13px;color:var(--ink-soft);margin-top:12px;}
+  .note b{color:var(--warn);}
+  footer{margin-top:26px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.6;}
+  footer code{font-family:var(--mono);background:var(--panel);border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="brand">BITSoM &middot; Business Statistics &middot; Session 5</div>
+    <h1>The <span class="b">p-value</span> Explorer</h1>
+  </div>
+  <div class="scenario-pick" id="scenarioPick" role="group">
+    <button class="chip" data-scn="loan" aria-pressed="true">Loan processing SLA</button>
+    <button class="chip" data-scn="session" aria-pressed="false">App session time</button>
+    <button class="chip" data-scn="plain" aria-pressed="false">Plain Z-test</button>
+  </div>
+</header>
+
+<div class="scenario" id="scenarioBox"></div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Test setup</h2>
+    <div class="ctrl"><label>Observed sample mean, x&#772; <span class="val" id="xbVal"></span></label>
+      <input type="range" id="xbRange" min="0" max="100" step="0.05"></div>
+    <div class="ctrl"><label>Sample size, n <span class="val" id="nVal"></span></label>
+      <input type="range" id="nRange" min="5" max="400" step="1"></div>
+    <div class="ctrl"><label>Significance level, &alpha; <span class="val" id="aVal"></span></label>
+      <input type="range" id="aRange" min="0.01" max="0.10" step="0.01" value="0.05"></div>
+    <div class="ctrl">
+      <label>Alternative hypothesis</label>
+      <div class="qtype">
+        <button class="qbtn" data-t="gt">&mu; &gt; &mu;&#8320;</button>
+        <button class="qbtn" data-t="lt">&mu; &lt; &mu;&#8320;</button>
+        <button class="qbtn" data-t="ne" aria-pressed="true">&mu; &ne; &mu;&#8320;</button>
+      </div>
+    </div>
+    <div class="readout"><span class="expr">p-value</span><span class="big" id="pVal"></span>
+      <span class="flag" id="decision"></span></div>
+    <div class="moments">
+      <div><div class="k">null mean &mu;&#8320;</div><div class="v" id="mu0"></div></div>
+      <div><div class="k">&sigma; (known)</div><div class="v" id="sig"></div></div>
+      <div><div class="k">SE = &sigma;/&radic;n</div><div class="v" id="se"></div></div>
+      <div><div class="k">Z statistic</div><div class="v" id="zStat"></div></div>
+    </div>
+    <p class="note" id="readNote"></p>
+  </div>
+
+  <div class="card chartcard">
+    <p class="cap">Sampling distribution of x&#772; if H&#8320; is true &mdash; drag the x&#772; slider and watch the shaded p-value</p>
+    <svg id="chart" viewBox="0 0 720 330"></svg>
+    <p class="note">The curve is the world where <b>H&#8320; is true</b>. The shaded tail is the probability of seeing
+      a sample mean at least this far out <em>in that world</em> — that is all a p-value is.
+      It is <b>not</b> the probability that H&#8320; is true.</p>
+  </div>
+</div>
+
+<footer>
+  The p-value answers one question only: <em>how surprising is this sample if H&#8320; were true?</em>
+  It is not the probability that H&#8320; is true &mdash; and nothing special happens at 0.05.
+</footer>
+</div>
+
+<script>
+const scenarios = {
+  loan: { mu0: 10, sigma: 2.5, unit: 'days', dec: 2, xmin: 8.5, xmax: 11.5, n: 25,
+    story: 'HDFC promises a <b>10-day</b> home-loan approval SLA. A branch audit samples n approved loans. ' +
+           'H&#8320;: &mu; = 10 days (SLA holds). Population SD &sigma; = 2.5 days, treated as known.' },
+  session: { mu0: 12, sigma: 4, unit: 'min', dec: 2, xmin: 10, xmax: 14, n: 60,
+    story: 'A UX redesign aims to lift average session time from <b>&mu;&#8320; = 12 min</b>. ' +
+           'Post-launch, we sample n sessions. &sigma; = 4 min. Did the redesign move the needle — or is it noise?' },
+  plain: { mu0: 50, sigma: 10, unit: '', dec: 2, xmin: 44, xmax: 56, n: 30,
+    story: '<b>X&#772; ~ Normal(&mu;&#8320; = 50, &sigma;/&radic;n)</b> under H&#8320; with &sigma; = 10. The abstract version.' }
+};
+function Phi(z){
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+  let p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return z >= 0 ? 1 - p : p;
+}
+const S = { scn: 'loan', xb: 10, n: 25, alpha: 0.05, tail: 'ne' };
+const $ = id => document.getElementById(id);
+
+function cfg(){ return scenarios[S.scn]; }
+function se(){ return cfg().sigma / Math.sqrt(S.n); }
+function zstat(){ return (S.xb - cfg().mu0) / se(); }
+function pval(){
+  const z = zstat();
+  if (S.tail === 'gt') return 1 - Phi(z);
+  if (S.tail === 'lt') return Phi(z);
+  return 2 * (1 - Phi(Math.abs(z)));
+}
+
+const M = { l: 50, r: 16, t: 14, b: 34 }, W = 720, H = 330;
+function xS(x){ const c = cfg(); return M.l + (x - c.xmin) / (c.xmax - c.xmin) * (W - M.l - M.r); }
+
+function render(){
+  const c = cfg();
+  $('xbRange').min = c.xmin; $('xbRange').max = c.xmax;
+  $('xbRange').step = (c.xmax - c.xmin) / 400;
+  $('xbRange').value = S.xb;
+  $('nRange').value = S.n; $('aRange').value = S.alpha;
+  $('scenarioBox').innerHTML = `<span class="tag">${S.scn === 'loan' ? 'SLA compliance' : S.scn === 'session' ? 'Product analytics' : 'Abstract'}</span>${c.story}`;
+  $('xbVal').textContent = S.xb.toFixed(c.dec) + (c.unit ? ' ' + c.unit : '');
+  $('nVal').textContent = S.n;
+  $('aVal').textContent = S.alpha.toFixed(2);
+  $('mu0').textContent = c.mu0 + (c.unit ? ' ' + c.unit : '');
+  $('sig').textContent = c.sigma;
+  $('se').textContent = se().toFixed(3);
+  $('zStat').textContent = zstat().toFixed(2);
+  const p = pval();
+  $('pVal').textContent = p < 0.0001 ? '<0.0001' : p.toFixed(4);
+  const rej = p < S.alpha;
+  const d = $('decision');
+  d.textContent = rej ? 'REJECT H₀ at α = ' + S.alpha.toFixed(2) : 'FAIL TO REJECT H₀';
+  d.className = 'flag ' + (rej ? 'rej' : 'fail');
+  $('readNote').innerHTML = rej
+    ? 'If the SLA truly held, a sample this extreme would occur only <b>' + (p * 100).toFixed(2) +
+      '%</b> of the time. Rare enough to act — but say what else you would want to know before escalating.'
+    : 'A result this size is unremarkable in a world where H&#8320; is true (p = ' + p.toFixed(3) +
+      '). Absence of evidence, not evidence of absence.';
+
+  // chart
+  const seV = se(), mu = c.mu0, z = zstat();
+  const maxD = 1 / (seV * Math.sqrt(2 * Math.PI));
+  const yS = y => (H - M.b) - y / (maxD * 1.1) * (H - M.t - M.b);
+  const dens = x => Math.exp(-((x - mu) ** 2) / (2 * seV * seV)) / (seV * Math.sqrt(2 * Math.PI));
+  let path = '', steps = 300;
+  for (let i = 0; i <= steps; i++){
+    const x = c.xmin + (c.xmax - c.xmin) * i / steps;
+    path += (i ? 'L' : 'M') + xS(x).toFixed(1) + ',' + yS(dens(x)).toFixed(1);
+  }
+  // shaded region(s)
+  function tailPath(from, to){
+    let p2 = `M${xS(from).toFixed(1)},${H - M.b}`;
+    for (let i = 0; i <= 120; i++){
+      const x = from + (to - from) * i / 120;
+      p2 += 'L' + xS(x).toFixed(1) + ',' + yS(dens(x)).toFixed(1);
+    }
+    p2 += `L${xS(to).toFixed(1)},${H - M.b} Z`;
+    return `<path d="${p2}" fill="var(--warn)" opacity="0.35" stroke="none"/>`;
+  }
+  let shade = '';
+  if (S.tail === 'gt') shade = tailPath(S.xb, c.xmax);
+  else if (S.tail === 'lt') shade = tailPath(c.xmin, S.xb);
+  else {
+    const dlt = Math.abs(S.xb - mu);
+    shade = tailPath(mu + dlt, c.xmax) + tailPath(c.xmin, mu - dlt);
+  }
+  let svg = shade;
+  svg += `<path d="${path}" fill="none" stroke="var(--ink-soft)" stroke-width="1.8"/>`;
+  svg += `<line x1="${xS(mu)}" y1="${M.t}" x2="${xS(mu)}" y2="${H - M.b}" stroke="var(--hair)" stroke-width="1.2"/>` +
+         `<text x="${xS(mu)}" y="${M.t - 2}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--ink-soft)">&mu;&#8320;</text>`;
+  const xb = xS(S.xb);
+  svg += `<line x1="${xb}" y1="${M.t + 6}" x2="${xb}" y2="${H - M.b}" stroke="var(--sel)" stroke-width="2.6"/>` +
+         `<text x="${xb + 5}" y="${M.t + 18}" font-family="var(--mono)" font-size="12" font-weight="700" fill="var(--sel)">x&#772; = ${S.xb.toFixed(c.dec)}  (Z = ${z.toFixed(2)})</text>`;
+  // axis
+  let ax = '';
+  const span = c.xmax - c.xmin, step2 = span >= 10 ? 2 : 0.5;
+  for (let v = Math.ceil(c.xmin / step2) * step2; v <= c.xmax + 1e-9; v += step2){
+    ax += `<line x1="${xS(v)}" y1="${H - M.b}" x2="${xS(v)}" y2="${H - M.b + 4}"/>` +
+          `<text x="${xS(v)}" y="${H - M.b + 16}" text-anchor="middle">${(+v.toFixed(1))}</text>`;
+  }
+  svg += `<g class="axis">${ax}<line x1="${M.l}" y1="${H - M.b}" x2="${W - M.r}" y2="${H - M.b}"/></g>`;
+  $('chart').innerHTML = svg;
+}
+
+document.querySelectorAll('#scenarioPick .chip').forEach(ch => ch.addEventListener('click', () => {
+  S.scn = ch.dataset.scn;
+  const c = cfg(); S.xb = c.mu0; S.n = c.n;
+  document.querySelectorAll('#scenarioPick .chip').forEach(el => el.setAttribute('aria-pressed', el === ch ? 'true' : 'false'));
+  render();
+}));
+document.querySelectorAll('.qbtn').forEach(b => b.addEventListener('click', () => {
+  S.tail = b.dataset.t;
+  document.querySelectorAll('.qbtn').forEach(el => el.setAttribute('aria-pressed', el === b ? 'true' : 'false'));
+  render();
+}));
+$('xbRange').addEventListener('input', e => { S.xb = +e.target.value; render(); });
+$('nRange').addEventListener('input', e => { S.n = +e.target.value; render(); });
+$('aRange').addEventListener('input', e => { S.alpha = +e.target.value; render(); });
+render();
+</script>
+</body>
+</html>
