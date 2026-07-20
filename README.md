@@ -1,5 +1,6 @@
 # Business Statistics — Interactive Applets
 
+Interactive explorers for the First-Year MBA **Business Statistics** course at BITSoM.
 Built as single-file HTML — no installation, no login, works in any modern browser.
 
 ## Open the applets (one click)
@@ -10,6 +11,9 @@ Built as single-file HTML — no installation, no login, works in any modern bro
 | [Poisson Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/poisson_explorer.html) | Counts per time window — call-centre arrivals, web orders | 3 |
 | [Normal Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/normal_explorer.html) | Continuous outcomes — delivery times, fill weights | 3 |
 | [Sampling Distribution Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/sampling_explorer.html) | Watch the sampling distribution of x̄ build, one sample at a time — the CLT in action | 4 |
+| [p-value Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/pvalue_explorer.html) | Drag the sample mean, watch the p-value shade — what "significant" actually means | 5 |
+| [Power Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/power_explorer.html) | Type I vs Type II errors, and why underpowered A/B tests are coin flips | 6 |
+
 
 ## How to use
 
