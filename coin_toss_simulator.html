@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coin-Toss Simulator — BITSoM Business Statistics</title>
+<style>
+  :root{
+    --paper:#F5F7FA;--panel:#FFFFFF;--ink:#12203A;--ink-soft:#4A5A73;--hair:#DCE3EC;
+    --bar:#1B4DB1;--bar-edge:#153C8C;--amber:#E0A93A;--tail:#C3CFE0;
+    --head:#1B4DB1;--headT:#fff;--tailc:#E4EAF2;--tailT:#4A5A73;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;padding:28px 22px 48px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  h1{font-size:30px;line-height:1.05;letter-spacing:-.02em;font-weight:800;margin:0;}
+  h1 .b{color:var(--bar);}
+  .scenario{background:var(--panel);border:1px solid var(--hair);border-left:4px solid var(--bar);border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:15px;color:var(--ink);}
+  .scenario .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--bar);display:block;margin-bottom:4px;}
+  .scenario b{font-weight:700;}
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--hair);border-radius:10px;padding:18px;}
+  .card h2{font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 14px;font-weight:600;}
+  .ctrl{margin-bottom:16px;}
+  .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--bar);}
+  input[type=range]{width:100%;accent-color:var(--bar);height:22px;margin:0;cursor:pointer;}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;}
+  .btn{font-family:var(--sans);font-size:13px;font-weight:600;padding:10px 6px;border:1px solid var(--hair);background:var(--paper);border-radius:7px;cursor:pointer;color:var(--ink);transition:.1s;}
+  .btn:hover{border-color:var(--bar);color:var(--bar);}
+  .btn.primary{background:var(--bar);border-color:var(--bar);color:#fff;}
+  .btn.wide{grid-column:1 / -1;} .btn.ghost{color:var(--ink-soft);}
+  .num{width:70px;font-family:var(--mono);font-size:14px;padding:5px 8px;border:1px solid var(--hair);border-radius:6px;color:var(--ink);}
+  .moments{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:8px;overflow:hidden;margin-top:16px;}
+  .moments div{background:var(--panel);padding:9px 11px;}
+  .moments .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);}
+  .moments .v{font-family:var(--mono);font-size:17px;font-weight:700;margin-top:2px;}
+  .coins{display:flex;flex-wrap:wrap;gap:5px;min-height:34px;margin-bottom:6px;}
+  .coin{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;}
+  .coin.h{background:var(--head);color:var(--headT);}
+  .coin.t{background:var(--tailc);color:var(--tailT);border:1px solid #CBD5E4;}
+  .lasttoss{font-size:13px;color:var(--ink-soft);margin-bottom:14px;}
+  .lasttoss b{color:var(--bar);font-family:var(--mono);}
+  .event{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;font-size:14px;}
+  .event .cmp{margin-left:auto;font-family:var(--mono);font-size:13px;}
+  .event .emp{color:var(--bar);font-weight:700;} .event .the{color:var(--amber);font-weight:700;}
+  .chartcard{padding:14px 16px;}
+  svg{width:100%;height:auto;display:block;overflow:visible;}
+  .axis text{font-family:var(--mono);font-size:10px;fill:var(--ink-soft);}
+  .axis line{stroke:var(--hair);}
+  .leg{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--ink-soft);}
+  .leg span{display:inline-flex;align-items:center;gap:6px;}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .swl{width:16px;height:0;border-top:3px solid var(--amber);display:inline-block;}
+  footer{margin-top:22px;font-size:12px;color:var(--ink-soft);text-align:center;line-height:1.6;}
+  footer code{font-family:var(--mono);background:var(--panel);border:1px solid var(--hair);padding:1px 5px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">BITSoM · Business Statistics</div>
+      <h1>The <span class="b">Coin-Toss</span> Simulator</h1>
+    </div>
+  </header>
+
+  <div class="scenario">
+    <span class="tag">From flips to a distribution</span>
+    Each coin is a Bernoulli trial; the number of heads in a toss of <b id="sN">10</b> coins is <b>Binomial(n, p)</b>. Toss many times and the simulated bars fill in the theoretical curve — the empirical twin of the Binomial Explorer.
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Controls</h2>
+      <div class="ctrl">
+        <label for="nR">Coins per toss, n <span class="val" id="nVal">10</span></label>
+        <input type="range" id="nR" min="1" max="50" value="10" step="1">
+      </div>
+      <div class="ctrl">
+        <label for="pR">P(heads), p <span class="val" id="pVal">0.50</span></label>
+        <input type="range" id="pR" min="0" max="1" value="0.5" step="0.01">
+      </div>
+      <div class="btns">
+        <button class="btn" id="t1">Toss once</button>
+        <button class="btn" id="t100">Toss 100</button>
+        <button class="btn primary wide" id="t1000">Toss 1,000 times</button>
+        <button class="btn ghost wide" id="reset">Reset</button>
+      </div>
+      <div class="moments">
+        <div><div class="k">Tosses</div><div class="v" id="mToss">0</div></div>
+        <div><div class="k">Heads proportion</div><div class="v" id="mProp">—</div></div>
+        <div><div class="k">Mean heads np</div><div class="v" id="mNp">5.00</div></div>
+        <div><div class="k">Empirical mean</div><div class="v" id="mEmp">—</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="coins" id="coins"></div>
+        <div class="lasttoss" id="lastToss">Press <b>Toss once</b> to flip the coins.</div>
+        <div class="event">
+          <span>P(X ≥ <input class="num" type="number" id="kNum" value="8" min="0" style="width:56px;">)</span>
+          <span class="cmp">empirical <span class="emp" id="empOut">—</span> &nbsp;·&nbsp; theoretical <span class="the" id="theOut">—</span></span>
+        </div>
+      </div>
+
+      <div class="card chartcard">
+        <svg id="chart" viewBox="0 0 720 320" role="img" aria-label="Distribution of number of heads"></svg>
+        <div class="leg">
+          <span><i class="sw" style="background:var(--bar)"></i> Simulated (relative frequency)</span>
+          <span><i class="swl"></i> Theoretical Binomial(n, p)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    The <b>heads proportion</b> creeps toward p as you toss more — the Law of Large Numbers. The <b>shape</b> of the count fills the binomial curve.<br>
+    Set n = 1 to watch a single coin's proportion settle on p; raise n to watch the bell emerge.
+  </footer>
+</div>
+
+<script>
+/* binomial pmf in log-space (matches the Binomial Explorer) */
+function logGamma(z){const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(z<0.5)return Math.log(Math.PI/Math.sin(Math.PI*z))-logGamma(1-z);z-=1;let x=c[0];for(let i=1;i<g+2;i++)x+=c[i]/(z+i);const t=z+g+0.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);}
+function logChoose(n,k){return logGamma(n+1)-logGamma(k+1)-logGamma(n-k+1);}
+function binomPMF(k,n,p){if(k<0||k>n)return 0;if(p<=0)return k===0?1:0;if(p>=1)return k===n?1:0;return Math.exp(logChoose(n,k)+k*Math.log(p)+(n-k)*Math.log(1-p));}
+
+const S={n:10,p:0.5,counts:new Array(11).fill(0),tosses:0,heads:0,last:[]};
+const $=id=>document.getElementById(id);
+
+function tossOnce(){
+  let h=0; const arr=new Array(S.n);
+  for(let i=0;i<S.n;i++){const isH=Math.random()<S.p;arr[i]=isH;if(isH)h++;}
+  S.counts[h]++; S.tosses++; S.heads+=h; S.last=arr;
+  return h;
+}
+function toss(k){let last=0;for(let i=0;i<k;i++)last=tossOnce();render(true);}
+
+function resetSim(){S.counts=new Array(S.n+1).fill(0);S.tosses=0;S.heads=0;S.last=[];render(false);}
+
+function drawCoins(){
+  const box=$('coins');
+  if(S.last.length===0){box.innerHTML='';return;}
+  if(S.n<=40){
+    box.innerHTML=S.last.map(h=>`<span class="coin ${h?'h':'t'}">${h?'H':'T'}</span>`).join('');
+  }else{
+    const h=S.last.filter(Boolean).length;
+    box.innerHTML=`<span class="lasttoss" style="margin:0"><b>${h}</b> heads and <b>${S.n-h}</b> tails (n = ${S.n} shown as a summary)</span>`;
+  }
+}
+
+function render(hadToss){
+  $('sN').textContent=S.n;
+  $('mToss').textContent=S.tosses.toLocaleString('en-IN');
+  $('mNp').textContent=(S.n*S.p).toFixed(2);
+  const flips=S.tosses*S.n;
+  $('mProp').textContent=flips? (S.heads/flips).toFixed(4) : '—';
+  $('mEmp').textContent=S.tosses? (S.heads/S.tosses).toFixed(3) : '—';
+
+  if(hadToss&&S.last.length){
+    const h=S.last.filter(Boolean).length;
+    $('lastToss').innerHTML=`Last toss: <b>${h}</b> heads out of <b>${S.n}</b>.`;
+  }
+  drawCoins();
+
+  // event P(X >= k)
+  let k=parseInt($('kNum').value); if(isNaN(k))k=0; k=Math.max(0,Math.min(S.n,k));
+  let empGE=0; for(let x=k;x<=S.n;x++)empGE+=(S.counts[x]||0);
+  const empP=S.tosses? empGE/S.tosses : null;
+  let theP=0; for(let x=k;x<=S.n;x++)theP+=binomPMF(x,S.n,S.p);
+  $('empOut').textContent= empP===null? '—' : (empP*100).toFixed(1)+'%';
+  $('theOut').textContent=(theP*100).toFixed(1)+'%';
+
+  drawChart();
+}
+
+function drawChart(){
+  const svg=$('chart');
+  const W=720,mL=40,mR=12,mT=12,mB=30,iw=W-mL-mR;
+  const H=300, ih=H-mT-mB, base=mT+ih, n=S.n;
+  // relative frequencies
+  const rel=S.counts.map(c=>S.tosses? c/S.tosses : 0);
+  const theo=[]; let maxY=0;
+  for(let k=0;k<=n;k++){const t=binomPMF(k,n,S.p);theo.push(t);maxY=Math.max(maxY,t,rel[k]||0);}
+  maxY=Math.max(maxY*1.12,0.02);
+  const barW=iw/(n+1), bw=Math.max(1,barW*0.8);
+  const y=v=>base-(v/maxY)*ih;
+  let out=`<g class="axis"><line x1="${mL}" y1="${base}" x2="${mL+iw}" y2="${base}" stroke="var(--ink)" stroke-width="1"/>`;
+  for(let i=0;i<=4;i++){const val=maxY*i/4,yy=y(val);
+    out+=`<line x1="${mL}" y1="${yy.toFixed(1)}" x2="${mL+iw}" y2="${yy.toFixed(1)}"/>`;
+    out+=`<text x="${mL-8}" y="${(yy+3).toFixed(1)}" text-anchor="end">${val.toFixed(2)}</text>`;}
+  out+=`</g>`;
+  // simulated bars
+  for(let k=0;k<=n;k++){if(!rel[k])continue;const x=mL+k*barW+(barW-bw)/2,yy=y(rel[k]);
+    out+=`<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${(base-yy).toFixed(1)}" fill="var(--bar)" stroke="var(--bar-edge)" stroke-width="0.4" rx="1"/>`;}
+  // x labels
+  const step=n<=20?1:(n<=40?5:10);
+  out+=`<g class="axis">`;
+  for(let k=0;k<=n;k+=step){const cx=mL+k*barW+barW/2;out+=`<text x="${cx.toFixed(1)}" y="${base+16}" text-anchor="middle">${k}</text>`;}
+  out+=`<text x="${(mL+iw/2).toFixed(1)}" y="${base+28}" text-anchor="middle" fill="var(--ink-soft)" style="font-size:11px">number of heads, X = x</text></g>`;
+  // theoretical binomial overlay (markers + line)
+  let d='';for(let k=0;k<=n;k++){const cx=mL+k*barW+barW/2,cy=y(theo[k]);d+=(k===0?'M':'L')+cx.toFixed(1)+','+cy.toFixed(1)+' ';}
+  out+=`<path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linejoin="round"/>`;
+  for(let k=0;k<=n;k++){const cx=mL+k*barW+barW/2,cy=y(theo[k]);if(theo[k]>0.001)out+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="2.1" fill="var(--amber)"/>`;}
+  svg.innerHTML=out;
+}
+
+$('nR').addEventListener('input',e=>{S.n=+e.target.value;$('nVal').textContent=S.n;resetSim();});
+$('pR').addEventListener('input',e=>{S.p=+e.target.value;$('pVal').textContent=S.p.toFixed(2);resetSim();});
+$('t1').addEventListener('click',()=>toss(1));
+$('t100').addEventListener('click',()=>toss(100));
+$('t1000').addEventListener('click',()=>toss(1000));
+$('reset').addEventListener('click',resetSim);
+$('kNum').addEventListener('input',()=>render(false));
+
+resetSim();
+</script>
+</body>
+</html>
