@@ -7,7 +7,7 @@ Built as single-file HTML — no installation, no login, works in any modern bro
 
 | Applet | Use it for | Session |
 |---|---|---|
-| [Coin-Toss Simulator](https://parasuram-bala.github.io/Applets-Business-Statistics/coin_toss_simulator.html) | Flip n coins many times — the count-of-heads distribution fills the binomial curve, and the heads proportion settles on p (law of large numbers) | 2–3 |
+| [Coin-Toss Simulator](https://parasuram-bala.github.io/Applets-Business-Statistics/coin_toss_simulator.html) | Flip n coins many times — the count-of-heads distribution fills the binomial curve, and the heads proportion settles on p (law of large numbers) | 2 |
 | [Binomial Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/binomial_explorer.html) | Yes/no counts over n trials — garment-QC batches, checkout conversion | 3 |
 | [Poisson Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/poisson_explorer.html) | Counts per time or space window — call-centre arrivals, steel-sheet defects | 3 |
 | [Normal Explorer](https://parasuram-bala.github.io/Applets-Business-Statistics/normal_explorer.html) | Continuous outcomes — delivery-time SLAs, fill weights | 3 |
